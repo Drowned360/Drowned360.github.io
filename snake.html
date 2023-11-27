@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    #game-container {
+      text-align: center;
+    }
+
+    canvas {
+      border: 1px solid #333;
+    }
+
+    #score {
+      font-size: 18px;
+    }
+
+    #game-over {
+      font-size: 24px;
+      color: red;
+      display: none;
+    }
+
+    button {
+      display: block;
+      margin: 10px auto;
+      padding: 10px;
+      font-size: 16px;
+    }
+  </style>
+  <title>Snake Game</title>
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="snakeCanvas" width="400" height="400"></canvas>
+    <div id="score">Score: 0</div>
+    <div id="game-over">Game Over!</div>
+    <button id="startBtn">Start</button>
+    <button id="pauseBtn">Pause</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('snakeCanvas');
+    const ctx = canvas.getContext('2d');
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const scoreElement = document.getElementById('score');
+    const gameOverElement = document.getElementById('game-over');
+
+    let isGameRunning = false;
+    let isPaused = false;
+    let score = 0;
+    let snake = [{ x: 10, y: 10 }];
+    let food = { x: 0, y: 0 };
+    let direction = 'right';
+
+    function startGame() {
+      isGameRunning = true;
+      isPaused = false;
+      score = 0;
+      snake = [{ x: 10, y: 10 }];
+      direction = 'right';
+      spawnFood();
+      updateGame();
+    }
+
+    function pauseGame() {
+      isPaused = !isPaused;
+      updateGame();
+    }
+
+    function spawnFood() {
+      food.x = Math.floor(Math.random() * 20) * 20;
+      food.y = Math.floor(Math.random() * 20) * 20;
+    }
+
+    function updateGame() {
+      if (!isGameRunning) return;
+
+      if (isPaused) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
+        ctx.font = '30px Arial';
+        ctx.fillText('Paused', canvas.width / 2 - 50, canvas.height / 2);
+        return;
+      }
+
+      // Update snake position
+      const head = { ...snake[0] };
+      switch (direction) {
+        case 'up': head.y -= 20; break;
+        case 'down': head.y += 20; break;
+        case 'left': head.x -= 20; break;
+        case 'right': head.x += 20; break;
+      }
+
+      // Check collision with walls or itself
+      if (
+        head.x < 0 || head.x >= canvas.width ||
+        head.y < 0 || head.y >= canvas.height ||
+        snake.some(segment => segment.x === head.x && segment.y === head.y)
+      ) {
+        isGameRunning = false;
+        gameOverElement.style.display = 'block';
+        return;
+      }
+
+      // Check collision with food
+      if (head.x === food.x && head.y === food.y) {
+        score += 10;
+        scoreElement.textContent = 'Score: ' + score;
+        spawnFood();
+      } else {
+        // Remove the last segment if no food is eaten
+        snake.pop();
+      }
+
+      // Move the snake
+      snake.unshift(head);
+
+      // Draw the game
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#00f'; // Snake color
+      snake.forEach(segment => ctx.fillRect(segment.x, segment.y, 20, 20));
+
+      ctx.fillStyle = '#f00'; // Food color
+      ctx.fillRect(food.x, food.y, 20, 20);
+
+      // Call updateGame again after a delay
+      requestAnimationFrame(updateGame);
+    }
+
+    startBtn.addEventListener('click', startGame);
+    pauseBtn.addEventListener('click', pauseGame);
+
+    document.addEventListener('keydown', (event) => {
+      if (!isPaused) {
+        switch (event.key) {
+          case 'ArrowUp': direction = 'up'; break;
+          case 'ArrowDown': direction = 'down'; break;
+          case 'ArrowLeft': direction = 'left'; break;
+          case 'ArrowRight': direction = 'right'; break;
+        }
+      }
+    });
+  </script>
+</body>
+</html>
